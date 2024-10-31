@@ -2,7 +2,7 @@
 
 """This is a module for collection of X-Road services information."""
 
-__version__ = '1.2.1'
+__version__ = '1.2.2'
 __author__ = 'Vitali Stupin'
 
 import queue
