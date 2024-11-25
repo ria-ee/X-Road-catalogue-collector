@@ -1,0 +1,118 @@
+---
+# Storage plugin to use
+storage_plugin: <PLUGIN_NAME>
+
+# "fs" plugin configuration:
+# storage_plugin: fs
+# Filesystem path to use for catalogue storage
+output_path: local/catalogue-data/INST
+
+# "minio" plugin configuration:
+# storage_plugin: minio
+# minio_url: localhost:9000
+# minio_access_key: <ACCESS_KEY>
+# minio_secret_key: <SECRET_KEY>
+# minio_secure: true
+# minio_ca_certs: local/certs/ca-certs.pem
+# minio_bucket: catalogue
+# minio_path: INST
+
+# Security Server URL used by collector
+server_url: https://security-server.domain.local
+
+# X-Road client used for X-Road queries
+client:
+  - INST
+  - CLASS
+  - MEMBER_CODE
+  - SYBSYSTEM_CODE
+
+# X-Road instance to collect data from
+instance: INST
+
+# Collector queries timeout
+timeout: 5.0
+
+# Security Server CA/self-signed certificate
+server_cert: local/certs/ca-certs.pem
+
+# Collector certificate to use for communication with Security Server
+client_cert: local/certs/collector-cert.pem
+
+# Collector key to use for communication with Security Server
+client_key: local/certs/collector.key
+
+# Collector thread count
+thread_count: 2
+
+# Replaces in WSDL documents to avoid creation of new documents
+# when service adds current time
+wsdl_replaces:
+  - - "Current time: \\d{4}\\-\\d{2}\\-\\d{2} \\d{2}:\\d{2}:\\d{2}"
+    - CURRENT_TIME_DELETED
+  - - "Genereerimise aeg: \\d{2}\\.\\d{2}\\.\\d{4} \\d{2}:\\d{2}:\\d{2}"
+    - "Genereerimise aeg: DELETED"
+  - - "<soap:address location=\"\\S+\"/>"
+    - "<soap:address location=\"DELETED\"/>"
+
+# Exclude X-Road members who are permanently in faulty state
+# or should not be queried for any other reasons
+excluded_member_codes:
+  - "90000000"
+  - "90000001"
+
+# Exclude X-Road subsystems who are permanently in faulty state
+# or should not be queried for any other reasons
+excluded_subsystem_codes:
+  - - "90000002"
+    - secret1
+  - - "90000003"
+    - secret2
+
+# Filtered history configuration (for "fs" and "minio" plugins)
+# First catalogue versions of every year are included automatically
+# Include "filtered_hours" or first catalogue version of every hour
+filtered_hours: 24
+# Include "filtered_days" or first catalogue version of every day
+filtered_days: 30
+# Include "filtered_months" or first catalogue version of every month
+filtered_months: 12
+
+# Cleanup configuration (for "fs" and "minio" plugins)
+# Run storage cleanup every "cleanup_interval" days
+cleanup_interval: 7
+# Do not clean any versions for the last "days_to_keep" days
+days_to_keep: 30
+
+# Logger configuration passed to logging.config.dictConfig()
+# Logging reference: https://docs.python.org/3/library/logging.config.html
+# Catalogue collector application is using "catalogue-collector" logger
+logging-config:
+  version: 1
+  disable_existing_loggers: true
+  formatters:
+    standard:
+      format: "%(asctime)s - %(threadName)s - %(levelname)s: %(message)s"
+  handlers:
+    console:
+      level: INFO
+      formatter: standard
+      class: logging.StreamHandler
+      stream: ext://sys.stdout
+    file:
+      level: INFO
+      formatter: standard
+      class: logging.FileHandler
+      filename: /var/log/catalogue-data/collector.log
+      mode: a
+  loggers:
+    "":
+      handlers:
+        - console
+      level: WARNING
+      propagate: true
+    catalogue-collector:
+      handlers:
+        - console
+      level: WARNING
+      propagate: false

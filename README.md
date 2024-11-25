@@ -1,59 +1,73 @@
-# Collector for X-tee subsystems and methods catalogue
+# X-Road Subsystems Methods and Services Catalogue Collector
 
-This application will collect data for X-tee subsystems and methods catalogue. Collector will output collected data to a directory that is ready to by served by web server (like Apache or Nginx). Subsequent executions will create new versions of catalogue while preserving old versions.
+This application will collect methods and services for the X-Road subsystems catalogue. The Collector will output the collected data to a directory that is ready to be served by a web server (like Apache or Nginx). Subsequent executions will create new versions of the catalogue, preserving older versions.
+
+Application provides "fs" plugin for storing data in local filesystem and "minio" plugin to store data in MinIO (S3). It is also possible to create other custom storage plugins.
 
 ## Configuration
 
-Create a configuration file for your X-Road instance using an example configuration file: [example-config.json](example-config.json). If you need to provide catalogue data for multiple X-Road instances then you will need separate configurations for each X-Road instance.
+Create a configuration file for your X-Road instance using an example configuration file: [example-config.yaml](example-config.yaml). If you need to provide catalogue data for multiple X-Road instances then you will need separate configurations for each X-Road instance.
 
-Configuration parameters:
-* `output_path` - output directory for collected data;
-* `minio_url` - address of your MinIO server;
-* `minio_access_key` - access key for MinIO;
-* `minio_secret_key` - secret key for MinIO;
-* `minio_secure` - boolean flag indicating if secure HTTPS connection is used for MinIO;
+Common configuration parameters:
+* `storage_plugin` - Plugin to use for data storage ("fs", "minio" or custom plugin);
+* `server_url` - Security Server URL used by collector;
+* `client` - Array of X-Road client identifiers used for X-Road queries;
+* `instance` - X-Road instance to collect data from;
+* `timeout` - Collector queries timeout;
+* `server_cert` - Optional TLS certificate or CA certificate of your Security Server for verification;
+* `client_cert` - Optional application TLS certificate for authentication with security server;
+* `client_key` - Optional application key for authentication with security server;
+* `thread_count` - Amount of parallel threads to use;
+* `wsdl_replaces` - Replace metadata like creation timestamp in WSDLs to avoid duplicates;
+* `excluded_member_codes` - Exclude certain members who are permanently in faulty state or should not be queried for any other reasons;
+* `excluded_subsystem_codes` - Exclude certain members who are permanently in faulty state or should not be queried for any other reasons;
+* `logging-config` - logging configuration passed to logging.config.dictConfig(). You can read more about Python3 logging here: [https://docs.python.org/3/library/logging.config.html](https://docs.python.org/3/library/logging.config.html).
+
+Filesystem plugin ("fs") configuration parameters:
+* `output_path` - Filesystem path to use for catalogue storage.
+
+MinIO plugin ("minio") configuration parameters:
+* `minio_url` - Address of your MinIO server;
+* `minio_access_key` - Access key for MinIO;
+* `minio_secret_key` - Secret key for MinIO;
+* `minio_secure` - Boolean flag indicating if secure HTTPS connection is used for MinIO;
 * `minio_ca_certs` - CA certificate for validating MinIO certificate;
 * `minio_bucket` - MinIO bucket used for file storage;
-* `minio_path` - path inside MinIO bucket used for file storage;
-* `server_url` - address of your security server;
-* `client` - array of X-Road client identifiers;
-* `instance` - X-Road instance to collect data from;
-* `timeout` - X-Road query timeout;
-* `server_cert` - optional TLS certificate of your security server for verification;
-* `client_cert` - optional application TLS certificate for authentication with security server;
-* `client_key` - optional application key for authentication with security server;
-* `thread_count` - amount of parallel threads to use;
-* `wsdl_replaces` - replace metadata like creation timestamp in WSDLs to avoid duplicates;
-* `excluded_member_codes` - exclude certain members who are permanently in faulty state or should not be queried for any other reasons;
-* `excluded_subsystem_codes` - exclude certain members who are permanently in faulty state or should not be queried for any other reasons;
-* `filtered_hours` - amount of parallel threads to use;
-* `filtered_days` - amount of parallel threads to use;
-* `filtered_months` - amount of parallel threads to use;
-* `cleanup_interval` - interval in days when automatic removal of older reports will be performed. During the cleanup only the first report of each day is preserved and extra reports are deleted;
-* `days_to_keep` - amount of latest days to protect against cleanup;
+* `minio_path` - Path inside MinIO bucket used for file storage.
 
-
-* `logging-config` - logging configuration passed to logging.config.dictConfig(). You can read more about Python3 logging here: [https://docs.python.org/3/library/logging.config.html](https://docs.python.org/3/library/logging.config.html).
+Configuration parameter common for "fs" and "minio" plugins:
+* `filtered_hours` - Include "filtered_hours" or first catalogue version of every hour;
+* `filtered_days` - Include "filtered_days" or first catalogue version of every day;
+* `filtered_months` - Include "filtered_months" or first catalogue version of every month;
+* `cleanup_interval` - Interval in days when automatic removal of older catalogue versions will be performed. During the cleanup only the first report of each day is preserved and extra reports are deleted;
+* `days_to_keep` - amount of latest days to protect against cleanup.
 
 ## Installing python venv
 
 Python virtual environment is an easy way to manage application dependencies. First You will need to install support for python venv:
 ```bash
-sudo apt-get install python3-venv
+sudo apt install python3-venv
 ```
 
-Then install required python modules into venv:
+Then install collector and required python modules into venv:
 ```bash
 python3 -m venv venv
 source venv/bin/activate
-pip install -r requirements.txt
+# Install xrdinfo module
+pip install xrdinfo/
+# Without MinIO support
+pip install .
+# Or with MinIO support
+pip install .[minio]
 ```
 
 ## Running
 
 You can run the collector by issuing command (with activated venv):
 ```bash
-python catalogue-collector.py config-instance1.json
+python -m xrd_collector config-instance1.json
+# Or alternatively
+xrd-collector config-instance1.json
 ```
 
 ## Systemd timer
@@ -69,34 +83,23 @@ sudo systemctl start catalogue-collector.timer
 sudo systemctl enable catalogue-collector.timer
 ```
 
-## Helper scripts
-
-* `recreate_history.py` - This script can be used to to update history.json file when it was corrupted or when some of the reports were deleted. Usage: `python3 recreate_history.py <path to catalogue>`
-* `remove_unused.py` - This script can be used to remove WSDL files that are no longer used in X-tee catalogue. For example due to deletion of older catalogue reports. Usage: `python3 remove_unused.py <path to catalogue>`. Or to simply list unused WSDLs: `python3 remove_unused.py --only-list <path to catalogue>`
-* `clean_history.py` - This script can be used to remove old JSON index files to free up disk space. Second parameter is an ammount of latest days that will not be cleaned. Older days will be cleaned so that only the first report of the day is kept. Usage: `python3 clean_history.py <path to catalogue> <days to keep>`
-
-If after usage of `remove_unused.py` you need to also delete empty directories then execute the following command inside catalogue directory:
-```bash
-find . -type d -empty -delete
-```
-
-## Minio storage
-
-If `minio_url` is configured then collected data will be pushed to minio storage.
+## Developing
 
 To test minio locally on linux machine execute the following commands (note that you should never use the default password for production):
 ```bash
-sudo mkdir -p /mnt/data
-docker run -d -p 9000:9000 --name minio1 -e "MINIO_ACCESS_KEY=minioadmin" -e "MINIO_SECRET_KEY=minioadmin" -v /mnt/data:/data minio/minio server /data
+sudo mkdir -p local/minio
+docker run -d -p 9000:9000 --name minio1 -e "MINIO_ACCESS_KEY=minioadmin" -e "MINIO_SECRET_KEY=minioadmin" -v $(pwd)/local/minio:/data minio/minio server /data
 cd
 wget https://dl.min.io/client/mc/release/linux-amd64/mc
 chmod +x mc
 ~/mc config host add --quiet --api s3v4 cat http://localhost:9000 minioadmin minioadmin
 ~/mc mb cat/catalogue
-~/mc policy set download cat/catalogue
+~/mc anonymous set download cat/catalogue
 ```
 
 To copy catalogue data to minio execute the following command:
 ```bash
 ~/mc cp -r EE cat/catalogue/
 ```
+
+In order create new storage plugins it is required to create "xrd_collector.plugin" entrypoint and implement new plugin based on xrd_collector.storage.PluginBase.
