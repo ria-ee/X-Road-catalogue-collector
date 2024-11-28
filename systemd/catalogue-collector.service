@@ -8,4 +8,4 @@ User=catalogue-collector
 Group=catalogue-collector
 WorkingDirectory=/opt/catalogue-collector/
 Environment="PATH=/opt/catalogue-collector/venv/bin"
-ExecStart=/opt/catalogue-collector/venv/bin/python catalogue-collector.py config.json
+ExecStart=/opt/catalogue-collector/venv/bin/python -m xrd_collector config.json

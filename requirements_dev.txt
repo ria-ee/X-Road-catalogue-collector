@@ -1,5 +1,0 @@
-minio==7.2.10
-pyyaml==6.0.2
-requests==2.32.3
-urllib3==2.2.3
-pylint

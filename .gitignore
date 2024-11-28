@@ -8,9 +8,18 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+*.egg-info
+build/
+dist/
+
 # Configuration files may contain secrets
 *config*.json
 !example-config.json
+*config*.yaml
+!example-config.yaml
 
 # Minio CA
 ca_certs.pem
+
+# Local files (sertificates, collected files etc)
+local/

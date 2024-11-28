@@ -1,3 +1,4 @@
+---
 openapi: 3.0.0
 servers:
   - description: X-tee EE instance data
@@ -41,7 +42,9 @@ paths:
         - opendata
       summary: previous version of catalogue
       operationId: indexVersion
-      description: returns list of all subsystems and services at the specified point of time
+      description: >
+        returns list of all subsystems and services at the specified
+        point of time
       parameters:
         - name: time
           in: path
@@ -81,7 +84,9 @@ paths:
         - opendata
       summary: filtered list of catalogue versions
       operationId: filteredHistory
-      description: returns filtered list of all catalogue versions (older versions get partially filtered out to have managable list of versions)
+      description: >
+        returns filtered list of all catalogue versions (older versions
+        get partially filtered out to have manageable list of versions)
       responses:
         '200':
           description: filtered list of catalogue versions
@@ -128,14 +133,16 @@ components:
             - OK
             - ERROR
           example: OK
-          description: Subsystem responded successfully to SOAP listMethods query
+          description: >
+            Subsystem responded successfully to SOAP listMethods query
         servicesStatus:
           type: string
           enum:
             - OK
             - ERROR
           example: OK
-          description: Subsystem responded successfully to REST listMethods query
+          description: >
+            Subsystem responded successfully to REST listMethods query
         methods:
           type: array
           items:
@@ -155,7 +162,7 @@ components:
       properties:
         serviceCode:
           type: string
-          example: oigused
+          example: rights
           description: X-tee SOAP service code
         serviceVersion:
           type: string
@@ -170,16 +177,18 @@ components:
             - SKIPPED
           example: OK
           description: |
-            Statuses of X-tee SOAP service description;
+            Statuses of X-tee SOAP service description:
             OK - WSDL query and parsing were successful;
             ERROR - WSDL query of parsing failed;
             TIMEOUT - WSDL query timed out;
-            SKIPPED - Query to the server where previous WSDL request timed out was not performed.
+            SKIPPED - Query to the server where previous WSDL request
+              timed out was not performed.
         wsdl:
           type: string
           format: url
           example: 'EE/GOV/70006317/aar/2.wsdl'
-          description: relative URL to X-tee SOAP service WSDL description file
+          description: >
+            relative URL to X-tee SOAP service WSDL description file
     Service:
       type: object
       description: REST service information
@@ -202,16 +211,18 @@ components:
             - SKIPPED
           example: OK
           description: |
-            Statuses of X-tee REST service description;
+            Statuses of X-tee REST service description:
             OK - OpenAPI query and parsing were successful;
             ERROR - OpenAPI query of parsing failed;
             TIMEOUT - OpenAPI query timed out;
-            SKIPPED - Query to the server where previous OpenAPI request timed out was not performed.
+            SKIPPED - Query to the server where previous OpenAPI request
+              timed out was not performed.
         openapi:
           type: string
           format: url
           example: 'EE/GOV/70006317/aar/stats_0.yaml'
-          description: relative URL to X-tee REST service OpenAPI description file
+          description: >
+            relative URL to X-tee REST service OpenAPI description file
         endpoints:
           type: array
           items:
