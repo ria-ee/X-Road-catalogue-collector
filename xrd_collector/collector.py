@@ -12,7 +12,7 @@ from typing import Any, Sequence
 import urllib.parse as urlparse
 import yaml
 
-import xrdinfo
+import xrdinfo  # type: ignore[import-untyped]
 from xrd_collector.storage import PluginBase, PluginError, PluginSkip, load_plugin
 from xrd_collector.util import Method, Service, Subsystem
 

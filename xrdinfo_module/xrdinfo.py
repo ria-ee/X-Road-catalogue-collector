@@ -1,5 +1,3 @@
-#!/usr/bin/python3
-
 """X-Road informational module.
 This module can be user to query various types of information about
 X-Road Members, Subsystems, Servers, Services and Service descriptions.
@@ -11,8 +9,6 @@ __all__ = [
     'members', 'subsystems', 'subsystems_with_membername', 'registered_subsystems',
     'subsystems_with_server', 'servers', 'addr_ips', 'servers_ips', 'methods', 'methods_rest',
     'wsdl', 'wsdl_methods', 'openapi', 'openapi_endpoints', 'identifier', 'identifier_parts']
-__version__ = '1.3.1'
-__author__ = 'Vitali Stupin'
 
 import json
 from io import BytesIO

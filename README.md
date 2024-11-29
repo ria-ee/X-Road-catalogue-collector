@@ -54,7 +54,7 @@ Then install collector and required python modules into venv:
 python3 -m venv venv
 source venv/bin/activate
 # Install xrdinfo module
-pip install xrdinfo/
+pip install xrdinfo_module/
 # Without MinIO support
 pip install .
 # Or with MinIO support
