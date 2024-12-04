@@ -1,8 +1,11 @@
 """Storage plugin management module for xrd_collector"""
-
 from importlib.metadata import entry_points
 from logging import Logger
-from typing import Any
+from typing import Any, Callable, ParamSpec, TypeVar, Concatenate
+
+ParamT = ParamSpec('ParamT')
+ReturnT = TypeVar('ReturnT')
+PluginT = TypeVar('PluginT', bound="PluginBase")
 
 
 class PluginError(Exception):
@@ -18,6 +21,18 @@ class PluginBase:
     # Plugin should set logger on initialization
     logger: Logger
     plugin_active: bool = False
+
+    def _deactivate_on_fail(self, function: Callable[ParamT, ReturnT]) -> Callable[ParamT, ReturnT]:
+        """Decorator for plugin deactivation on unhandled exception"""
+        def wrapper(*args: ParamT.args, **kwargs: ParamT.kwargs) -> ReturnT:
+            try:
+                return function(*args, **kwargs)
+            except Exception as err:
+                self.logger.warning('Storage plugin failed with error: %s', err)
+                self.deactivate()
+                raise err
+
+        return wrapper
 
     def active(self) -> bool:
         """Return True if plugin is active"""
@@ -63,9 +78,13 @@ class PluginBase:
         raise NotImplementedError
 
 
-def deactivate_on_fail(function):
+def deactivate_on_fail(
+        function: Callable[Concatenate[PluginT, ParamT], ReturnT]) -> Callable[
+            Concatenate[PluginT, ParamT], ReturnT]:
     """Decorator for plugin deactivation on unhandled exception"""
-    def wrapper(self, *args, **kwargs):
+    def wrapper(
+            self: PluginT,
+            *args: ParamT.args, **kwargs: ParamT.kwargs) -> ReturnT:
         try:
             return function(self, *args, **kwargs)
         except Exception as err:
@@ -75,7 +94,7 @@ def deactivate_on_fail(function):
     return wrapper
 
 
-def load_plugin(config_data, logger, plugin_name) -> PluginBase:
+def load_plugin(config_data: dict[str, Any], logger: Logger, plugin_name: str) -> PluginBase:
     """Load required storage plugin"""
     # Getting list of available plugins
     plugin_entry_points = entry_points(group="xrd_collector.plugin")

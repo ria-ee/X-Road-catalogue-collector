@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 import hashlib
 import json
+from logging import Logger
 import os
 import re
 import shutil
@@ -36,7 +37,7 @@ class Config:
 class FSPlugin(PluginBase):
     """Class for filesystem storage plugin"""
 
-    def __init__(self, config_data, logger) -> None:
+    def __init__(self, config_data: dict[str, Any], logger: Logger) -> None:
         self.logger = logger
         self._config(config_data)
         self._make_dirs(self.config.output_path)
@@ -95,7 +96,7 @@ class FSPlugin(PluginBase):
                 f'Cannot create directory {path}')
 
     @staticmethod
-    def _hash_docs(path: str, doc_type: str):
+    def _hash_docs(path: str, doc_type: str) -> dict[str, str]:
         """Find hashes of all documents with specified document type in directory"""
         hashes = {}
         for file_name in os.listdir(path):
@@ -125,22 +126,22 @@ class FSPlugin(PluginBase):
         return hashes
 
     @staticmethod
-    def _write_json(file_name: str, json_data: Any):
+    def _write_json(file_name: str, json_data: Any) -> None:
         """Write data to JSON file"""
         with open(file_name, 'w', encoding='utf-8') as json_file:
             json.dump(json_data, json_file, indent=2, ensure_ascii=False)
 
-    def _get_catalogue_reports(self, history=False):
+    def _get_catalogue_reports(self, history: bool = False) -> list[dict[str, Any]]:
         """Get list of reports"""
-        reports = []
+        reports: list[dict[str, Any]] = []
         for file_name in os.listdir(self.config.output_path):
             util.add_report_file(file_name, reports, history=history)
         reports.sort(key=util.sort_by_report_time, reverse=True)
         return reports
 
-    def _get_old_reports(self):
+    def _get_old_reports(self) -> list:
         """Get old reports that need to be removed"""
-        old_reports = []
+        old_reports: list = []
         all_reports = self._get_catalogue_reports()
         cur_time = datetime.today()
         fresh_time = datetime(cur_time.year, cur_time.month, cur_time.day) - timedelta(
@@ -154,9 +155,9 @@ class FSPlugin(PluginBase):
         old_reports.sort()
         return old_reports
 
-    def _get_reports_set(self):
+    def _get_reports_set(self) -> set[str]:
         """Get set of reports"""
-        reports = set()
+        reports: set[str] = set()
         for file_name in os.listdir(self.config.output_path):
             search_res = re.search(
                 r'^index_(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})\.json$',
@@ -165,13 +166,13 @@ class FSPlugin(PluginBase):
                 reports.add(file_name)
         return reports
 
-    def _get_docs_in_report(self, report_file):
+    def _get_docs_in_report(self, report_file: str) -> set[str]:
         with open(
                 os.path.join(self.config.output_path, report_file),
                 'r', encoding='utf-8') as json_file:
             report_data = json.load(json_file)
 
-        used_docs = set()
+        used_docs: set[str] = set()
         for system in report_data:
             for method in system['methods']:
                 if method['wsdl']:
@@ -182,20 +183,20 @@ class FSPlugin(PluginBase):
                         used_docs.add(os.path.join(self.config.output_path, service['openapi']))
         return used_docs
 
-    def _get_available_docs(self):
-        available_docs = set()
+    def _get_available_docs(self) -> set[str]:
+        available_docs: set[str] = set()
         for root, _, files in os.walk(os.path.join(self.config.output_path, self.config.instance)):
             for file_name in files:
                 util.add_doc_file(file_name, root, available_docs)
         return available_docs
 
-    def _get_unused_docs(self):
+    def _get_unused_docs(self) -> set[str]:
         reports = self._get_reports_set()
         if not reports:
             self.logger.warning('Did not find any reports!')
             return set()
 
-        used_docs = set()
+        used_docs: set[str] = set()
         for report_file in reports:
             used_docs = used_docs.union(self._get_docs_in_report(report_file))
         if not used_docs:
@@ -246,7 +247,7 @@ class FSPlugin(PluginBase):
 
         # Cleanup documents
         unused_docs = self._get_unused_docs()
-        changed_dirs = set()
+        changed_dirs: set[str] = set()
         if unused_docs:
             self.logger.info(f'Removing {len(unused_docs)} unused document(s):')
             for doc_path in unused_docs:
@@ -271,8 +272,7 @@ class FSPlugin(PluginBase):
         self._write_json(os.path.join(self.config.output_path, 'cleanup_status.json'), json_status)
 
     @deactivate_on_fail
-    def subsystem_state(self, subsystem_path: str, doc_type: str) -> tuple[
-            str, dict[str, str]]:
+    def subsystem_state(self, subsystem_path: str, doc_type: str) -> tuple[str, dict[str, str]]:
         """
         Get storage state for a subsystem
         Return tuple: (Documents path used by subsystem, Document hashes)
@@ -342,7 +342,7 @@ class FSPlugin(PluginBase):
 
         self._write_json(os.path.join(self.config.output_path, f'index_{suffix}.json'), json_data)
 
-        json_history = []
+        json_history: list[dict[str, str]] = []
         try:
             with open(
                     os.path.join(self.config.output_path, HISTORY_FILE_NAME),

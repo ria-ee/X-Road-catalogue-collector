@@ -81,32 +81,32 @@ def export_subsystem(subsystem: Subsystem) -> dict[str, Any]:
     }
 
 
-def sort_by_report_time(item):
+def sort_by_report_time(item: dict[str, Any]) -> Any:
     """A helper function for sorting, indicates which field to use"""
     return item['reportTime']
 
 
-def hour_start(src_time):
+def hour_start(src_time: datetime) -> datetime:
     """Return the beginning of the hour of the specified datetime"""
     return datetime(src_time.year, src_time.month, src_time.day, src_time.hour)
 
 
-def day_start(src_time):
+def day_start(src_time: datetime) -> datetime:
     """Return the beginning of the day of the specified datetime"""
     return datetime(src_time.year, src_time.month, src_time.day)
 
 
-def month_start(src_time):
+def month_start(src_time: datetime) -> datetime:
     """Return the beginning of the month of the specified datetime"""
     return datetime(src_time.year, src_time.month, 1)
 
 
-def year_start(src_time):
+def year_start(src_time: datetime) -> datetime:
     """Return the beginning of the year of the specified datetime"""
     return datetime(src_time.year, 1, 1)
 
 
-def add_months(src_time, amount):
+def add_months(src_time: datetime, amount: int) -> datetime:
     """Adds specified amount of months to datetime value.
     Specifying negative amount will result in subtraction of months.
     """
@@ -122,34 +122,38 @@ def add_months(src_time, amount):
         month=(src_time.month - 1 + amount) % 12 + 1)
 
 
-def shift_current_hour(offset):
+def shift_current_hour(offset: int) -> datetime:
     """Shifts current hour by a specified offset"""
     start = hour_start(datetime.today())
     return start + timedelta(hours=offset)
 
 
-def shift_current_day(offset):
+def shift_current_day(offset: int) -> datetime:
     """Shifts current hour by a specified offset"""
     start = day_start(datetime.today())
     return start + timedelta(days=offset)
 
 
-def shift_current_month(offset):
+def shift_current_month(offset: int) -> datetime:
     """Shifts current hour by a specified offset"""
     start = month_start(datetime.today())
     return add_months(start, offset)
 
 
-def add_filtered(filtered, item_key, report_time, history_item, min_time):
+def add_filtered(
+        filtered: dict[Any, Any], item_key: datetime, report_time: datetime,
+        history_item: dict[str, str], min_time: datetime | None) -> None:
     """Add report to the list of filtered reports"""
     if min_time is None or item_key >= min_time:
         if item_key not in filtered or report_time < filtered[item_key]['time']:
             filtered[item_key] = {'time': report_time, 'item': history_item}
 
 
-def filtered_history(json_history, filtered_hours, filtered_days, filtered_months):
+def filtered_history(
+        json_history: list[dict[str, str]], filtered_hours: int, filtered_days: int,
+        filtered_months: int) -> list[dict[str, str]]:
     """Get filtered reports history"""
-    filtered_items = {}
+    filtered_items: dict[Any, Any] = {}
     for history_item in json_history:
         report_time = datetime.strptime(history_item['reportTime'], '%Y-%m-%d %H:%M:%S')
 
@@ -181,7 +185,7 @@ def filtered_history(json_history, filtered_hours, filtered_days, filtered_month
     return json_filtered_history
 
 
-def add_report_file(file_name, reports, history=False):
+def add_report_file(file_name: str, reports: list[dict[str, Any]], history: bool = False) -> None:
     """Add report to reports list if filename matches"""
     search_res = re.search(
         '^index_(\\d{4})(\\d{2})(\\d{2})(\\d{2})(\\d{2})(\\d{2})\\.json$', file_name)
@@ -199,12 +203,12 @@ def add_report_file(file_name, reports, history=False):
             'reportPath': file_name})
 
 
-def get_reports_to_keep(reports, fresh_time):
+def get_reports_to_keep(reports: list[dict[str, Any]], fresh_time: datetime) -> list[str]:
     """Get reports that must not be removed during cleanup"""
     # Latest report is never deleted
-    unique_paths = {reports[0]['reportTime']: reports[0]['reportPath']}
+    unique_paths: dict[datetime, str] = {reports[0]['reportTime']: reports[0]['reportPath']}
 
-    filtered_items = {}
+    filtered_items: dict[datetime, dict[str, Any]] = {}
     for report in reports:
         if report['reportTime'] >= fresh_time:
             # Keeping all fresh reports
@@ -228,7 +232,7 @@ def get_reports_to_keep(reports, fresh_time):
     return paths_to_keep
 
 
-def add_doc_file(file_name, path, docs):
+def add_doc_file(file_name: str, path: str, docs: set[str]) -> None:
     """Add document to document list if file name matches document name template"""
     search_res = re.search('^\\d+\\.wsdl$', file_name)
     if search_res:

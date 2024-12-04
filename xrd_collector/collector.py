@@ -12,7 +12,7 @@ from typing import Any, Sequence
 import urllib.parse as urlparse
 import yaml
 
-import xrdinfo  # type: ignore[import-untyped]
+import xrdinfo
 from xrd_collector.storage import PluginBase, PluginError, PluginSkip, load_plugin
 from xrd_collector.util import Method, Service, Subsystem
 
@@ -484,7 +484,9 @@ class Collector:
 
     def collect(self) -> int:
         """Start X-Road collector"""
-        shared_params = None
+        # Initializing 'shared_params' so that editors would not think
+        # it could be used before initialization
+        shared_params: str = ''
         try:
             shared_params = xrdinfo.shared_params_ss(
                 addr=self.config.server_url, instance=self.config.instance,
@@ -515,6 +517,7 @@ class Collector:
                 self.work_queue.put(subsystem)
         except xrdinfo.XrdInfoError as err:
             self.logger.error('Cannot process Global Configuration: %s', err)
+            self.logger.debug('%s', traceback.format_exc())
             self._exit_program(1)
 
         # Block until all tasks in queue are done
