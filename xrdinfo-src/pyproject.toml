@@ -1,6 +1,5 @@
 [build-system]
-# Supporting setuptools version used in Ubuntu 22.04
-requires = ["setuptools >= 59.6"]
+requires = ["setuptools >= 61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
