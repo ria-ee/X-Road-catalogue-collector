@@ -54,11 +54,15 @@ Then install collector and required python modules into venv:
 python3 -m venv venv
 source venv/bin/activate
 # Install xrdinfo module
-pip install xrdinfo/
+pip install xrdinfo-module/
+# Install xrdinfo stubs for checking code with mypy
+pip install xrdinfo-stubs/
 # Without MinIO support
 pip install .
 # Or with MinIO support
 pip install .[minio]
+# Or with MinIO support and dev tools
+pip install .[minio, dev]
 ```
 
 ## Running

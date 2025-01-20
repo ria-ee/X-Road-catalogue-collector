@@ -9,6 +9,7 @@ from datetime import datetime, timedelta
 import hashlib
 from io import BytesIO
 import json
+from logging import Logger
 import os
 import re
 import time
@@ -47,7 +48,7 @@ class MinIOPlugin(PluginBase):
     """Class for MinIO storage plugin"""
     client: Minio
 
-    def __init__(self, config_data, logger) -> None:
+    def __init__(self, config_data: dict[str, Any], logger: Logger) -> None:
         self.logger = logger
         self._config(config_data)
         self._prepare_client()
@@ -124,7 +125,7 @@ class MinIOPlugin(PluginBase):
             self.logger.info(
                 'Configuring "days_to_keep": %s', self.config.days_to_keep)
 
-    def _prepare_client(self):
+    def _prepare_client(self) -> None:
         """Prepares MinIO client"""
         if self.config.minio_ca_certs:
             http_client = urllib3.PoolManager(
@@ -153,7 +154,7 @@ class MinIOPlugin(PluginBase):
             return f'{path.strip("/")}/'
         return ''
 
-    def _hash_docs(self, path: str, doc_type: str):
+    def _hash_docs(self, path: str, doc_type: str) -> dict[str, str]:
         """Find hashes of all documents with specified document type in directory"""
         hashes = {}
         path_prefix = self._minio_prefix(path)
@@ -174,7 +175,7 @@ class MinIOPlugin(PluginBase):
                 hashes[file_name] = hashlib.md5(doc_object.data).hexdigest()
         return hashes
 
-    def _get_hashes(self, path: str, doc_type: str):
+    def _get_hashes(self, path: str, doc_type: str) -> dict[str, str]:
         """Get document hashes of the specified document types in a directory"""
         try:
             wsdl_hashes_file = self.client.get_object(
@@ -184,16 +185,16 @@ class MinIOPlugin(PluginBase):
             hashes = self._hash_docs(path, doc_type)
         return hashes
 
-    def _write_json(self, file_name: str, json_data: Any):
+    def _write_json(self, file_name: str, json_data: Any) -> None:
         """Write data to JSON file"""
         json_binary = json.dumps(json_data, indent=2, ensure_ascii=False).encode()
         self.client.put_object(
             self.config.minio_bucket, file_name,
             BytesIO(json_binary), len(json_binary), content_type='application/json')
 
-    def _get_catalogue_reports(self, history=False):
+    def _get_catalogue_reports(self, history: bool = False) -> list[dict[str, Any]]:
         """Get list of reports"""
-        reports = []
+        reports: list[dict[str, Any]] = []
         path_prefix = self._minio_prefix(self.config.minio_path)
         for obj in self.client.list_objects(
                 self.config.minio_bucket, prefix=path_prefix, recursive=False):
@@ -202,9 +203,9 @@ class MinIOPlugin(PluginBase):
         reports.sort(key=util.sort_by_report_time, reverse=True)
         return reports
 
-    def _get_old_reports(self):
+    def _get_old_reports(self) -> list:
         """Get old reports that need to be removed"""
-        old_reports = []
+        old_reports: list = []
         all_reports = self._get_catalogue_reports()
         cur_time = datetime.today()
         fresh_time = datetime(cur_time.year, cur_time.month, cur_time.day) - timedelta(
@@ -218,9 +219,9 @@ class MinIOPlugin(PluginBase):
         old_reports.sort()
         return old_reports
 
-    def _get_reports_set(self):
+    def _get_reports_set(self) -> set[str]:
         """Get set of reports"""
-        reports = set()
+        reports: set[str] = set()
         path_prefix = self._minio_prefix(self.config.minio_path)
         for obj in self.client.list_objects(
                 self.config.minio_bucket, prefix=path_prefix, recursive=False):
@@ -232,12 +233,12 @@ class MinIOPlugin(PluginBase):
                 reports.add(file_name)
         return reports
 
-    def _get_docs_in_report(self, report_file):
+    def _get_docs_in_report(self, report_file: str) -> set[str]:
         obj = self.client.get_object(
             self.config.minio_bucket, os.path.join(self.config.minio_path, report_file))
         report_data = json.loads(obj.data.decode('utf-8'))
 
-        used_docs = set()
+        used_docs: set[str] = set()
         for system in report_data:
             for method in system['methods']:
                 if method['wsdl']:
@@ -248,8 +249,8 @@ class MinIOPlugin(PluginBase):
                         used_docs.add(os.path.join(self.config.minio_path, service['openapi']))
         return used_docs
 
-    def _get_available_docs(self):
-        available_docs = set()
+    def _get_available_docs(self) -> set[str]:
+        available_docs: set[str] = set()
         path_prefix = self._minio_prefix(
             os.path.join(self.config.minio_path, self.config.instance))
         for obj in self.client.list_objects(
@@ -259,13 +260,13 @@ class MinIOPlugin(PluginBase):
                 available_docs)
         return available_docs
 
-    def _get_unused_docs(self):
+    def _get_unused_docs(self) -> set[str]:
         reports = self._get_reports_set()
         if not reports:
             self.logger.warning('Did not find any reports!')
             return set()
 
-        used_docs = set()
+        used_docs: set[str] = set()
         for report_file in reports:
             used_docs = used_docs.union(self._get_docs_in_report(report_file))
         if not used_docs:
@@ -317,7 +318,7 @@ class MinIOPlugin(PluginBase):
 
         # Cleanup documents
         unused_docs = self._get_unused_docs()
-        changed_dirs = set()
+        changed_dirs: set[str] = set()
         if unused_docs:
             self.logger.info(f'Removing {len(unused_docs)} unused document(s):')
             for doc_path in unused_docs:
@@ -418,7 +419,7 @@ class MinIOPlugin(PluginBase):
 
         self._write_json(os.path.join(self.config.minio_path, f'index_{suffix}.json'), json_data)
 
-        json_history = []
+        json_history: list[dict[str, str]] = []
         try:
             json_history_file = self.client.get_object(
                 self.config.minio_bucket, os.path.join(self.config.minio_path, HISTORY_FILE_NAME))
