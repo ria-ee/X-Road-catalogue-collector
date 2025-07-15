@@ -13,8 +13,8 @@ readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
     "pyyaml == 6.0.2",
-    "requests == 2.32.3",
-    "urllib3 == 2.2.3",
+    "requests == 2.32.4",
+    "urllib3 == 2.5.0",
     "xrdinfo == 1.4.0"
 ]
 classifiers = [
@@ -38,7 +38,7 @@ minio = "xrd_collector.minio_plugin:MinIOPlugin"
 
 [project.optional-dependencies]
 minio = [
-    "minio == 7.2.12",
+    "minio == 7.2.15",
 ]
 dev = [
     "pylint",
