@@ -83,6 +83,10 @@ filtered_months: 12
 cleanup_interval: 7
 # Do not clean any versions for the last "days_to_keep" days
 days_to_keep: 30
+# For reports older than "days_to_keep" keep only:
+# - first report of the day - "day_first" (Default if not set)
+# - first report of the month - "month_first"
+keep_older: day_first
 
 # Logger configuration passed to logging.config.dictConfig()
 # Logging reference: https://docs.python.org/3/library/logging.config.html

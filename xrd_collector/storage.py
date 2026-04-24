@@ -3,7 +3,7 @@ from importlib.metadata import entry_points
 from logging import Logger
 from typing import Any, Callable, ParamSpec, TypeVar, Concatenate
 
-ParamT = ParamSpec('ParamT')
+P = ParamSpec('P')
 ReturnT = TypeVar('ReturnT')
 PluginT = TypeVar('PluginT', bound="PluginBase")
 
@@ -22,9 +22,9 @@ class PluginBase:
     logger: Logger
     plugin_active: bool = False
 
-    def _deactivate_on_fail(self, function: Callable[ParamT, ReturnT]) -> Callable[ParamT, ReturnT]:
+    def _deactivate_on_fail(self, function: Callable[P, ReturnT]) -> Callable[P, ReturnT]:
         """Decorator for plugin deactivation on unhandled exception"""
-        def wrapper(*args: ParamT.args, **kwargs: ParamT.kwargs) -> ReturnT:
+        def wrapper(*args: P.args, **kwargs: P.kwargs) -> ReturnT:
             try:
                 return function(*args, **kwargs)
             except Exception as err:
@@ -79,12 +79,12 @@ class PluginBase:
 
 
 def deactivate_on_fail(
-        function: Callable[Concatenate[PluginT, ParamT], ReturnT]) -> Callable[
-            Concatenate[PluginT, ParamT], ReturnT]:
+        function: Callable[Concatenate[PluginT, P], ReturnT]) -> Callable[
+            Concatenate[PluginT, P], ReturnT]:
     """Decorator for plugin deactivation on unhandled exception"""
     def wrapper(
             self: PluginT,
-            *args: ParamT.args, **kwargs: ParamT.kwargs) -> ReturnT:
+            *args: P.args, **kwargs: P.kwargs) -> ReturnT:
         try:
             return function(self, *args, **kwargs)
         except Exception as err:
