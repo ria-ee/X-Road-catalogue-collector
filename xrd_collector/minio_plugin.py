@@ -42,6 +42,7 @@ class Config:
     filtered_months: int = 12
     cleanup_interval: int = 7
     days_to_keep: int = 30
+    keep_older: str = 'day_first'
 
 
 class MinIOPlugin(PluginBase):
@@ -124,6 +125,12 @@ class MinIOPlugin(PluginBase):
             self.config.days_to_keep = config_data['days_to_keep']
             self.logger.info(
                 'Configuring "days_to_keep": %s', self.config.days_to_keep)
+
+        if 'keep_older' in config_data and config_data['keep_older'] in (
+                'day_first', 'month_first'):
+            self.config.keep_older = config_data['keep_older']
+            self.logger.info(
+                'Configuring "keep_older": %s', self.config.keep_older)
 
     def _prepare_client(self) -> None:
         """Prepares MinIO client"""
@@ -210,7 +217,7 @@ class MinIOPlugin(PluginBase):
         cur_time = datetime.today()
         fresh_time = datetime(cur_time.year, cur_time.month, cur_time.day) - timedelta(
             days=self.config.days_to_keep)
-        paths_to_keep = util.get_reports_to_keep(all_reports, fresh_time)
+        paths_to_keep = util.get_reports_to_keep(all_reports, fresh_time, self.config.keep_older)
 
         for report in all_reports:
             if report['reportPath'] not in paths_to_keep:

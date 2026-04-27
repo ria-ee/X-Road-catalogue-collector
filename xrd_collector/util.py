@@ -203,7 +203,9 @@ def add_report_file(file_name: str, reports: list[dict[str, Any]], history: bool
             'reportPath': file_name})
 
 
-def get_reports_to_keep(reports: list[dict[str, Any]], fresh_time: datetime) -> list[str]:
+def get_reports_to_keep(
+        reports: list[dict[str, Any]], fresh_time: datetime,
+        keep_older: str = 'day_first') -> list[str]:
     """Get reports that must not be removed during cleanup"""
     # Latest report is never deleted
     unique_paths: dict[datetime, str] = {reports[0]['reportTime']: reports[0]['reportPath']}
@@ -214,9 +216,14 @@ def get_reports_to_keep(reports: list[dict[str, Any]], fresh_time: datetime) -> 
             # Keeping all fresh reports
             unique_paths[report['reportTime']] = report['reportPath']
         else:
-            # Searching for the first report in a day
-            item_key = datetime(
-                report['reportTime'].year, report['reportTime'].month, report['reportTime'].day)
+            if keep_older == 'month_first':
+                # Searching for the first report in a month
+                item_key = datetime(
+                    report['reportTime'].year, report['reportTime'].month, 1)
+            else:
+                # Searching for the first report in a day
+                item_key = datetime(
+                    report['reportTime'].year, report['reportTime'].month, report['reportTime'].day)
             if item_key not in filtered_items \
                     or report['reportTime'] < filtered_items[item_key]['reportTime']:
                 filtered_items[item_key] = {
