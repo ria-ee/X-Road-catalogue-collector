@@ -14,7 +14,7 @@ requires-python = ">=3.10"
 dependencies = [
     "pyyaml == 6.0.3",
     "requests == 2.34.2",
-    "urllib3 == 2.7.0",
+    "urllib3 == 2.8.0",
     "xrdinfo == 1.4.0"
 ]
 classifiers = [
