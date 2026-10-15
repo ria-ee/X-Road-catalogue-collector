@@ -1,9 +1,10 @@
 """Common classes and functions"""
-from dataclasses import dataclass
-from datetime import datetime, timedelta
 import os
 import re
-from typing import Any, Sequence
+from collections.abc import Sequence
+from dataclasses import dataclass
+from datetime import datetime, timedelta
+from typing import Any
 
 DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
 
@@ -124,19 +125,19 @@ def add_months(src_time: datetime, amount: int) -> datetime:
 
 def shift_current_hour(offset: int) -> datetime:
     """Shifts current hour by a specified offset"""
-    start = hour_start(datetime.today())
+    start = hour_start(datetime.now())
     return start + timedelta(hours=offset)
 
 
 def shift_current_day(offset: int) -> datetime:
     """Shifts current hour by a specified offset"""
-    start = day_start(datetime.today())
+    start = day_start(datetime.now())
     return start + timedelta(days=offset)
 
 
 def shift_current_month(offset: int) -> datetime:
     """Shifts current hour by a specified offset"""
-    start = month_start(datetime.today())
+    start = month_start(datetime.now())
     return add_months(start, offset)
 
 
@@ -144,9 +145,10 @@ def add_filtered(
         filtered: dict[Any, Any], item_key: datetime, report_time: datetime,
         history_item: dict[str, str], min_time: datetime | None) -> None:
     """Add report to the list of filtered reports"""
-    if min_time is None or item_key >= min_time:
-        if item_key not in filtered or report_time < filtered[item_key]['time']:
-            filtered[item_key] = {'time': report_time, 'item': history_item}
+    if (
+            (min_time is None or item_key >= min_time)
+            and (item_key not in filtered or report_time < filtered[item_key]['time'])):
+        filtered[item_key] = {'time': report_time, 'item': history_item}
 
 
 def filtered_history(

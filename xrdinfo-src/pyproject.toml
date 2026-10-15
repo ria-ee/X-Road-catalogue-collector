@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "xrdinfo"
-version = "1.4.0"
+version = "1.4.1"
 authors = [
     { name="Vitali Stupin", email="vitali.stupin@ria.ee" },
 ]
