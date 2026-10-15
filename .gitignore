@@ -17,6 +17,7 @@ dist/
 !example-config.json
 *config*.yaml
 !example-config.yaml
+.pypirc
 
 # Minio CA
 ca_certs.pem
