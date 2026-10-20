@@ -1,7 +1,8 @@
 """Storage plugin management module for xrd_collector"""
+from collections.abc import Callable
 from importlib.metadata import entry_points
 from logging import Logger
-from typing import Any, Callable, ParamSpec, TypeVar, Concatenate
+from typing import Any, Concatenate, ParamSpec, TypeVar
 
 P = ParamSpec('P')
 ReturnT = TypeVar('ReturnT')
@@ -30,7 +31,7 @@ class PluginBase:
             except Exception as err:
                 self.logger.warning('Storage plugin failed with error: %s', err)
                 self.deactivate()
-                raise err
+                raise
 
         return wrapper
 
@@ -90,7 +91,7 @@ def deactivate_on_fail(
         except Exception as err:
             self.logger.warning('Storage plugin failed with error: %s', err)
             self.deactivate()
-            raise err
+            raise
     return wrapper
 
 

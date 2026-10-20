@@ -9,6 +9,7 @@ Application provides "fs" plugin for storing data in local filesystem and "minio
 Create a configuration file for your X-Road instance using an example configuration file: [example-config.yaml](example-config.yaml). If you need to provide catalogue data for multiple X-Road instances then you will need separate configurations for each X-Road instance.
 
 Common configuration parameters:
+
 * `storage_plugin` - Plugin to use for data storage ("fs", "minio" or custom plugin);
 * `server_url` - Security Server URL used by collector;
 * `client` - Array of X-Road client identifiers used for X-Road queries;
@@ -24,9 +25,11 @@ Common configuration parameters:
 * `logging-config` - logging configuration passed to logging.config.dictConfig(). You can read more about Python3 logging here: [https://docs.python.org/3/library/logging.config.html](https://docs.python.org/3/library/logging.config.html).
 
 Filesystem plugin ("fs") configuration parameters:
+
 * `output_path` - Filesystem path to use for catalogue storage.
 
 MinIO plugin ("minio") configuration parameters:
+
 * `minio_url` - Address of your MinIO server;
 * `minio_access_key` - Access key for MinIO;
 * `minio_secret_key` - Secret key for MinIO;
@@ -36,6 +39,7 @@ MinIO plugin ("minio") configuration parameters:
 * `minio_path` - Path inside MinIO bucket used for file storage.
 
 Configuration parameter common for "fs" and "minio" plugins:
+
 * `filtered_hours` - Include "filtered_hours" or first catalogue version of every hour;
 * `filtered_days` - Include "filtered_days" or first catalogue version of every day;
 * `filtered_months` - Include "filtered_months" or first catalogue version of every month;
@@ -45,11 +49,13 @@ Configuration parameter common for "fs" and "minio" plugins:
 ## Installing python venv
 
 Python virtual environment is an easy way to manage application dependencies. First You will need to install support for python venv:
+
 ```bash
 sudo apt install python3-venv
 ```
 
 Then install collector and required python modules into venv:
+
 ```bash
 python3 -m venv venv
 source venv/bin/activate
@@ -66,6 +72,7 @@ pip install .[minio,dev]
 ## Running
 
 You can run the collector by issuing command (with activated venv):
+
 ```bash
 python -m xrd_collector config-instance1.json
 # Or alternatively
@@ -79,6 +86,7 @@ Systemd timer can be used as more advanced version of cron. You can use provided
 Add service description `systemd/catalogue-collector.service` to `/lib/systemd/system/catalogue-collector.service` and timer description `systemd/catalogue-collector.timer` to `/lib/systemd/system/catalogue-collector.timer`.
 
 Then start and enable automatic startup:
+
 ```bash
 sudo systemctl daemon-reload
 sudo systemctl start catalogue-collector.timer
@@ -88,6 +96,7 @@ sudo systemctl enable catalogue-collector.timer
 ## Developing
 
 To test minio locally on linux machine execute the following commands (note that you should never use the default password for production):
+
 ```bash
 sudo mkdir -p local/minio
 docker run -d -p 9000:9000 --name minio1 -e "MINIO_ACCESS_KEY=minioadmin" -e "MINIO_SECRET_KEY=minioadmin" -v $(pwd)/local/minio:/data minio/minio server /data
@@ -100,6 +109,7 @@ chmod +x mc
 ```
 
 To copy catalogue data to minio execute the following command:
+
 ```bash
 ~/mc cp -r EE cat/catalogue/
 ```

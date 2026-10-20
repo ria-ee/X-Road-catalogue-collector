@@ -1,18 +1,20 @@
 """This is a module for collection of X-Road services information."""
 
 import argparse
-from dataclasses import dataclass, field
-from logging import Logger
 import logging.config
 import queue
 import re
-from threading import Thread, Event, Lock
 import traceback
-from typing import Any, Sequence
 import urllib.parse as urlparse
-import yaml
+from collections.abc import Sequence
+from dataclasses import dataclass, field
+from logging import Logger
+from threading import Event, Lock, Thread
+from typing import Any
 
 import xrdinfo
+import yaml
+
 from xrd_collector.storage import PluginBase, PluginError, PluginSkip, load_plugin
 from xrd_collector.util import Method, Service, Subsystem
 
@@ -78,13 +80,17 @@ class Collector:
     storage: PluginBase
     config: Config
     logger: Logger = logging.getLogger(LOGGER_NAME)
-    results: dict[str, Subsystem] = {}
-    results_lock: Lock = Lock()
-    shutdown: Event = Event()
-    work_queue: queue.Queue = queue.Queue()
+    results: dict[str, Subsystem]
+    results_lock: Lock
+    shutdown: Event
+    work_queue: queue.Queue
 
     def __init__(self, argv: Sequence[str] | None = None):
         logging.config.dictConfig(DEFAULT_LOGGER)
+        self.results = {}
+        self.results_lock = Lock()
+        self.shutdown = Event()
+        self.work_queue = queue.Queue()
 
         parser = argparse.ArgumentParser(
             description='Collect WSDL and OpenAPI service descriptions from X-Road members.',
@@ -115,7 +121,7 @@ class Collector:
                 self.logger.info('Loading configuration from file "%s"', config_file)
                 # JSON as a subset of YAML can be also read as YAML
                 return yaml.safe_load(conf)
-        except IOError as err:
+        except OSError as err:
             self.logger.error('Cannot load configuration file "%s": %s', config_file, str(err))
             return {}
         except yaml.YAMLError as err:
@@ -134,7 +140,7 @@ class Collector:
         # Default configuration
         self.config = Config()
 
-        if 'storage_plugin' in config_data and config_data['storage_plugin']:
+        if config_data.get('storage_plugin'):
             self.config.storage_plugin = config_data['storage_plugin']
             self.logger.info('Configuring "storage_plugin": %s', self.config.storage_plugin)
         else:
@@ -158,7 +164,7 @@ class Collector:
                 'Example: ["INST", "CLASS", "MEMBER_CODE", "MEMBER_CLASS"])')
             self._exit_program(1)
 
-        if 'instance' in config_data and config_data['instance']:
+        if config_data.get('instance'):
             self.config.instance = config_data['instance']
             self.logger.info('Configuring "instance": %s', self.config.instance)
 
@@ -166,7 +172,7 @@ class Collector:
             self.config.timeout = config_data['timeout']
             self.logger.info('Configuring "timeout": %s', self.config.timeout)
 
-        if 'server_cert' in config_data and config_data['server_cert']:
+        if config_data.get('server_cert'):
             self.config.verify = config_data['server_cert']
             self.logger.info('Configuring "verify": %s', self.config.verify)
 
@@ -452,7 +458,7 @@ class Collector:
                         subsystem_path, subsystem, methods_status, methods_result,
                         services_status, services_result)
             # Using broad exception to avoid unexpected exits of workers
-            except Exception as err:  # pylint: disable=broad-exception-caught
+            except Exception as err:  # noqa: BLE001  # pylint: disable=broad-exception-caught
                 with self.results_lock:
                     self.results[subsystem_path] = self._subsystem_item(
                         subsystem_path, subsystem, 'ERROR', {}, 'ERROR', [])

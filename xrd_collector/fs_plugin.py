@@ -4,19 +4,19 @@
 # the same file based storage model. Reduction of code duplication
 # may increase complexity of each plugin and decrease readability.
 # pylint: disable=duplicate-code
-from dataclasses import dataclass
-from datetime import datetime, timedelta
 import hashlib
 import json
-from logging import Logger
 import os
 import re
 import shutil
 import time
+from dataclasses import dataclass
+from datetime import datetime, timedelta
+from logging import Logger
 from typing import Any
 
-from xrd_collector.storage import PluginBase, PluginError, deactivate_on_fail
 from xrd_collector import util
+from xrd_collector.storage import PluginBase, PluginError, deactivate_on_fail
 
 HISTORY_FILE_NAME = 'history.json'
 
@@ -48,13 +48,13 @@ class FSPlugin(PluginBase):
         # Default configuration
         self.config = Config()
 
-        if 'output_path' in config_data and config_data['output_path']:
+        if config_data.get('output_path'):
             self.config.output_path = config_data['output_path']
             self.logger.info('Configuring "output_path": %s', self.config.output_path)
         else:
             raise PluginError('Configuration error: "output_path" is not configured')
 
-        if 'instance' in config_data and config_data['instance']:
+        if config_data.get('instance'):
             self.config.instance = config_data['instance']
             self.logger.info('Configuring "instance": %s', self.config.instance)
         else:
@@ -128,7 +128,7 @@ class FSPlugin(PluginBase):
             with open(
                     os.path.join(path, f'_{doc_type}_hashes'), 'r', encoding='utf-8') as json_file:
                 hashes = json.load(json_file)
-        except IOError:
+        except OSError:
             hashes = self._hash_docs(path, doc_type)
         return hashes
 
@@ -150,7 +150,7 @@ class FSPlugin(PluginBase):
         """Get old reports that need to be removed"""
         old_reports: list = []
         all_reports = self._get_catalogue_reports()
-        cur_time = datetime.today()
+        cur_time = datetime.now()
         fresh_time = datetime(cur_time.year, cur_time.month, cur_time.day) - timedelta(
             days=self.config.days_to_keep)
         paths_to_keep = util.get_reports_to_keep(all_reports, fresh_time, self.config.keep_older)
@@ -223,14 +223,13 @@ class FSPlugin(PluginBase):
                     'r', encoding='utf-8') as json_file:
                 cleanup_status = json.load(json_file)
                 last_cleanup = datetime.strptime(cleanup_status['lastCleanup'], util.DATE_FORMAT)
-        except (IOError, ValueError):
+        except (OSError, ValueError):
             self.logger.info('Cleanup status not found')
 
-        if last_cleanup:
-            if datetime.today() - timedelta(
-                    days=self.config.cleanup_interval) < util.day_start(last_cleanup):
-                self.logger.info('Cleanup interval is not passed yet')
-                return
+        if last_cleanup and datetime.now() - timedelta(
+                days=self.config.cleanup_interval) < util.day_start(last_cleanup):
+            self.logger.info('Cleanup interval is not passed yet')
+            return
 
         self.logger.info('Starting cleanup')
 
@@ -308,7 +307,7 @@ class FSPlugin(PluginBase):
         """
         doc_hash = hashlib.md5(doc.encode('utf-8')).hexdigest()
         max_doc = -1
-        for file_name in hashes.keys():
+        for file_name, file_hash in hashes.items():
             match file_ext:
                 case 'wsdl':
                     pattern = r'^(\d+)\.wsdl$'
@@ -318,7 +317,7 @@ class FSPlugin(PluginBase):
                     raise PluginError(f'Unknown file extension: "{file_ext}"')
             search_res = re.search(pattern, file_name)
             if search_res:
-                if doc_hash == hashes[file_name]:
+                if doc_hash == file_hash:
                     # Matching document found (both name pattern and hash)
                     return file_name, doc_hash
                 max_doc = max(max_doc, int(search_res.group(1)))
@@ -355,7 +354,7 @@ class FSPlugin(PluginBase):
                     os.path.join(self.config.output_path, HISTORY_FILE_NAME),
                     'r', encoding='utf-8') as json_file:
                 json_history = json.load(json_file)
-        except IOError:
+        except OSError:
             self.logger.info('History file history.json not found')
 
         json_history.append({'reportTime': formatted_time, 'reportPath': f'index_{suffix}.json'})
